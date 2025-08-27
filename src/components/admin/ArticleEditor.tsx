@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, X, Eye, Upload, Mic, Square, Play, Pause } from 'lucide-react';
+import { Save, X, Eye, Mic, Square } from 'lucide-react';
 import { Article, Category } from '../../types';
 import { articlesApi } from '../../utils/api';
 
@@ -53,7 +53,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
   }, [id, isEditing, articles, navigate]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+  let interval: ReturnType<typeof setInterval>;
     if (isRecording) {
       interval = setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -105,8 +105,12 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
       setTimeout(() => {
         navigate('/admin/articles');
       }, 1200);
-    } catch (err: any) {
-      setError(err?.message || 'Eroare la salvarea articolului');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Eroare la salvarea articolului');
+      }
       setSuccess(null);
     } finally {
       setLoading(false);

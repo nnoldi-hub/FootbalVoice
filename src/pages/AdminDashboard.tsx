@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import AdminProfileEditor from '../components/admin/AdminProfileEditor';
+import StaticPagesManager from '../components/admin/StaticPagesManager';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminHeader from '../components/admin/AdminHeader';
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -11,7 +13,7 @@ import { Article, User } from '../types';
 
 interface AdminDashboardProps {
   articles: Article[];
-  onUpdateArticles: (articles: Article[]) => void;
+  onUpdateArticles: () => void;
   user: User;
   onLogout: () => void;
 }
@@ -25,19 +27,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <AdminHeader 
         user={user} 
         onLogout={onLogout}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
-      
       <div className="flex">
         <AdminSidebar 
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
-        
         <main className="flex-1 lg:ml-64 p-6">
           <Routes>
             <Route path="/" element={<Navigate to="/admin/articles" replace />} />
@@ -71,6 +71,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Route path="/subscribers" element={<SubscriberManager />} />
             <Route path="/newsletter" element={<NewsletterManager articles={articles} />} />
             <Route path="/analytics" element={<Analytics articles={articles} />} />
+            <Route path="/profile" element={<AdminProfileEditor />} />
+            <Route path="/static-pages" element={<StaticPagesManager />} />
           </Routes>
         </main>
       </div>

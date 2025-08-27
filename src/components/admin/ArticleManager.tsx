@@ -3,14 +3,12 @@ import { Link } from 'react-router-dom';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Edit2, 
   Trash2, 
   Eye, 
   EyeOff,
   Star,
   Clock,
-  MoreVertical,
   FileText
 } from 'lucide-react';
 import { Article, Category } from '../../types';
@@ -55,8 +53,12 @@ const ArticleManager: React.FC<ArticleManagerProps> = ({ articles, onUpdateArtic
     try {
       await action();
       onUpdateArticles();
-    } catch (err: any) {
-      setError(err?.message || 'Eroare la comunicarea cu serverul');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Eroare la comunicarea cu serverul');
+      }
     } finally {
       setLoading(false);
     }
