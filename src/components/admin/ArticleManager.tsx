@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Plus, 
@@ -10,13 +10,15 @@ import {
   EyeOff,
   Star,
   Clock,
-  MoreVertical
+  MoreVertical,
+  FileText
 } from 'lucide-react';
 import { Article, Category } from '../../types';
+import { articlesApi } from '../../utils/api';
 
 interface ArticleManagerProps {
   articles: Article[];
-  onUpdateArticles: (articles: Article[]) => void;
+  onUpdateArticles: () => void; // Schimbat pentru a declanșa reîncărcarea
 }
 
 const categoryLabels = {
@@ -28,48 +30,68 @@ const categoryLabels = {
   'imaginary-interviews': 'Interviuri Imaginare',
 };
 
+
 const ArticleManager: React.FC<ArticleManagerProps> = ({ articles, onUpdateArticles }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filteredArticles = articles.filter(article => {
     const matchesSearch = searchTerm === '' || 
       article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       article.content.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory;
-    
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'published' && article.published) ||
       (statusFilter === 'draft' && !article.published);
-    
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
+  const handleApiAction = async (action: () => Promise<void>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await action();
+      onUpdateArticles();
+    } catch (err: any) {
+      setError(err?.message || 'Eroare la comunicarea cu serverul');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTogglePublished = (articleId: string) => {
-    const updatedArticles = articles.map(article =>
-      article.id === articleId 
-        ? { ...article, published: !article.published, updatedAt: new Date().toISOString() }
-        : article
-    );
-    onUpdateArticles(updatedArticles);
+    handleApiAction(async () => {
+      const article = articles.find(a => a.id === articleId);
+      if (article) {
+        await articlesApi.updateArticle(articleId, { 
+          published: !article.published,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    });
   };
 
   const handleToggleFeatured = (articleId: string) => {
-    const updatedArticles = articles.map(article =>
-      article.id === articleId 
-        ? { ...article, featured: !article.featured, updatedAt: new Date().toISOString() }
-        : article
-    );
-    onUpdateArticles(updatedArticles);
+    handleApiAction(async () => {
+      const article = articles.find(a => a.id === articleId);
+      if (article) {
+        await articlesApi.updateArticle(articleId, { 
+          featured: !article.featured,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    });
   };
 
   const handleDeleteArticle = (articleId: string) => {
     const article = articles.find(a => a.id === articleId);
     if (article && window.confirm(`Ești sigur că vrei să ștergi articolul "${article.title}"?`)) {
-      const updatedArticles = articles.filter(a => a.id !== articleId);
-      onUpdateArticles(updatedArticles);
+      handleApiAction(async () => {
+        await articlesApi.deleteArticle(articleId);
+      });
     }
   };
 
@@ -85,6 +107,19 @@ const ArticleManager: React.FC<ArticleManagerProps> = ({ articles, onUpdateArtic
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <span className="text-blue-600 font-semibold">Se procesează...</span>
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
+          <strong>Eroare:</strong> {error}
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>

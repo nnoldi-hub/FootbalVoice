@@ -1,0 +1,10 @@
+[
+  {
+    "id": "admin1",
+    "email": "david@footballvoice.ro",
+    "name": "David Admin",
+    "password": "admin123",
+    "role": "admin",
+    "createdAt": "2025-08-26T10:00:00.000Z"
+  }
+]

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, X, Eye, Upload, Mic, Square, Play, Pause } from 'lucide-react';
 import { Article, Category } from '../../types';
+import { articlesApi } from '../../utils/api';
 
 interface ArticleEditorProps {
   articles: Article[];
-  onUpdateArticles: (articles: Article[]) => void;
+  onUpdateArticles: () => void; // Schimbat pentru a declanșa reîncărcarea
 }
 
 const categoryLabels = {
@@ -20,7 +21,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = !!id;
-  
+
   const [article, setArticle] = useState<Partial<Article>>({
     title: '',
     content: '',
@@ -31,11 +32,14 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
     featured: false,
     imageUrl: '',
   });
-  
+
   const [newTag, setNewTag] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [previewMode, setPreviewMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (isEditing && id) {
@@ -58,42 +62,55 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  const handleSave = (publish = false) => {
-    if (!article.title?.trim() || !article.content?.trim()) {
-      alert('Te rog completează titlul și conținutul articolului.');
+  const handleSave = async () => {
+    if (!article.title || !article.content) {
+      setError('Titlul și conținutul sunt obligatorii!');
+      setSuccess(null);
       return;
     }
-
-    const now = new Date().toISOString();
-    const readTime = Math.ceil(article.content.length / 1000); // Rough estimate: 1000 chars per minute
-    
-    const articleToSave: Article = {
-      id: article.id || Date.now().toString(),
-      title: article.title.trim(),
-      content: article.content.trim(),
-      excerpt: article.excerpt?.trim() || article.content.substring(0, 200) + '...',
-      category: article.category as Category,
-      tags: article.tags || [],
-      published: publish || article.published || false,
-      featured: article.featured || false,
-      imageUrl: article.imageUrl || '',
-      publishedAt: article.published ? article.publishedAt || now : now,
-      createdAt: article.createdAt || now,
-      updatedAt: now,
-      readTime,
-      views: article.views || 0,
-    };
-
-    if (isEditing) {
-      const updatedArticles = articles.map(a => 
-        a.id === articleToSave.id ? articleToSave : a
-      );
-      onUpdateArticles(updatedArticles);
-    } else {
-      onUpdateArticles([...articles, articleToSave]);
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const now = new Date().toISOString();
+      const readTime = Math.max(1, Math.ceil(article.content.split(' ').length / 200));
+      const articleData = {
+        title: article.title,
+        content: article.content,
+        excerpt: article.excerpt || article.content.substring(0, 150) + '...',
+        category: article.category || 'match-analysis' as Category,
+        tags: article.tags || [],
+        published: article.published || false,
+        featured: article.featured || false,
+        imageUrl: article.imageUrl || '',
+        publishedAt: article.published ? (article.publishedAt || now) : now,
+        readTime,
+      };
+      if (isEditing) {
+        await articlesApi.updateArticle(article.id!, {
+          ...articleData,
+          updatedAt: now
+        });
+        setSuccess('Articolul a fost actualizat cu succes!');
+      } else {
+        await articlesApi.createArticle({
+          ...articleData,
+          createdAt: now,
+          updatedAt: now,
+          views: 0
+        });
+        setSuccess('Articolul a fost creat cu succes!');
+      }
+      onUpdateArticles();
+      setTimeout(() => {
+        navigate('/admin/articles');
+      }, 1200);
+    } catch (err: any) {
+      setError(err?.message || 'Eroare la salvarea articolului');
+      setSuccess(null);
+    } finally {
+      setLoading(false);
     }
-
-    navigate('/admin/articles');
   };
 
   const handleAddTag = () => {
@@ -184,6 +201,24 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <span className="text-blue-600 font-semibold">Se salvează articolul...</span>
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
+          <strong>Eroare:</strong> {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-100 text-green-700 px-4 py-2 rounded mb-4">
+          <strong>Succes:</strong> {success}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -336,7 +371,10 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
 
             <div className="mt-6 space-y-3">
               <button
-                onClick={() => handleSave(false)}
+                onClick={() => {
+                  setArticle(prev => ({ ...prev, published: false }));
+                  handleSave();
+                }}
                 className="w-full flex items-center justify-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
               >
                 <Save className="w-5 h-5" />
@@ -344,7 +382,10 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ articles, onUpdateArticle
               </button>
               
               <button
-                onClick={() => handleSave(true)}
+                onClick={() => {
+                  setArticle(prev => ({ ...prev, published: true }));
+                  handleSave();
+                }}
                 className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
               >
                 <Save className="w-5 h-5" />

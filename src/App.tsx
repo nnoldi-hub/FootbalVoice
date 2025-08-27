@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AdminDashboard from './pages/AdminDashboard';
 import PublicSite from './pages/PublicSite';
 import LoginPage from './pages/LoginPage';
 import { Article, User } from './types';
-import { loadArticles, saveArticles, loadUser, saveUser } from './utils/storage';
+import { loadArticles, saveUser, loadUser } from './utils/api';
 
 function App() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -13,17 +13,22 @@ function App() {
 
   useEffect(() => {
     // Load initial data
-    setArticles(loadArticles());
-    setUser(loadUser());
-    setIsLoading(false);
-  }, []);
+    const initializeData = async () => {
+      try {
+        const loadedArticles = await loadArticles();
+        setArticles(loadedArticles);
+        setUser(loadUser());
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        setArticles([]);
+        setUser(loadUser());
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    // Save articles whenever they change
-    if (!isLoading) {
-      saveArticles(articles);
-    }
-  }, [articles, isLoading]);
+    initializeData();
+  }, []);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -35,8 +40,13 @@ function App() {
     localStorage.removeItem('footballvoice-user');
   };
 
-  const updateArticles = (newArticles: Article[]) => {
-    setArticles(newArticles);
+  const updateArticles = async () => {
+    try {
+      const loadedArticles = await loadArticles();
+      setArticles(loadedArticles);
+    } catch (error) {
+      console.error('Error reloading articles:', error);
+    }
   };
 
   if (isLoading) {

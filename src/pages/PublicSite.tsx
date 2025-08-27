@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PublicHeader from '../components/public/PublicHeader';
 import PublicFooter from '../components/public/PublicFooter';
@@ -10,15 +10,30 @@ import FeaturedArticles from '../components/public/FeaturedArticles';
 import AboutSection from '../components/public/AboutSection';
 import ContactSection from '../components/public/ContactSection';
 import { Article, Category } from '../types';
+import { loadPublicArticles } from '../utils/api';
 
-interface PublicSiteProps {
-  articles: Article[];
-}
-
-const PublicSite: React.FC<PublicSiteProps> = ({ articles }) => {
+const PublicSite: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const publicArticles = await loadPublicArticles();
+        setArticles(publicArticles);
+      } catch (error) {
+        console.error('Error loading public articles:', error);
+        setArticles([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState('home');
 
@@ -179,6 +194,17 @@ const PublicSite: React.FC<PublicSiteProps> = ({ articles }) => {
       </>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Se încarcă articolele...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
