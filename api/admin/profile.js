@@ -16,7 +16,8 @@ export default async function handler(req, res) {
       );
       res.status(200).json({ success: true });
     } catch (err) {
-      res.status(500).json({ error: 'Eroare la actualizarea profilului' });
+      console.error('PG ERROR (PUT /api/admin/profile):', err);
+      res.status(500).json({ error: 'Eroare la actualizarea profilului', details: err.message });
     }
   } else if (req.method === 'GET') {
     const email = req.query.email;
@@ -26,7 +27,8 @@ export default async function handler(req, res) {
       if (rows.length === 0) return res.status(404).json({ error: 'Adminul nu a fost găsit' });
       res.status(200).json(rows[0]);
     } catch (err) {
-      res.status(500).json({ error: 'Eroare la preluarea profilului' });
+      console.error('PG ERROR (GET /api/admin/profile):', err);
+      res.status(500).json({ error: 'Eroare la preluarea profilului', details: err.message });
     }
   } else {
     res.status(405).json({ error: 'Method Not Allowed' });
