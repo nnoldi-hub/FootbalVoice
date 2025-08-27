@@ -1,3 +1,34 @@
+// Endpoint pentru actualizare profil admin
+app.put('/api/admin/profile', async (req, res) => {
+  const { email, name, password } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email lipsă' });
+  try {
+    // Update admin în baza de date (simplificat, fără hash parola)
+    await pool.query(
+      'UPDATE admins SET name = $1, password = $2 WHERE email = $3',
+      [name, password, email]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Eroare la actualizarea profilului' });
+  }
+});
+
+// Endpoint pentru actualizare pagini statice (Despre noi, Contact)
+app.put('/api/pages/:slug', async (req, res) => {
+  const { slug } = req.params;
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Conținut lipsă' });
+  try {
+    await pool.query(
+      'INSERT INTO pages (slug, content) VALUES ($1, $2) ON CONFLICT (slug) DO UPDATE SET content = $2',
+      [slug, content]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Eroare la actualizarea paginii' });
+  }
+});
 // Endpoint pentru verificarea codului de login
 app.post('/api/verify-login-code', (req, res) => {
   const { email, code } = req.body;
