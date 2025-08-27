@@ -6,6 +6,16 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
+  // Setează headerele CORS pentru toate răspunsurile
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    // Răspunde la preflight CORS
+    res.status(204).end();
+    return;
+  }
   if (req.method === 'GET') {
     // Returnează toate articolele
     try {
