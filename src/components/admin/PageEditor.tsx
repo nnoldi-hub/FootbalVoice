@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ContactEditor from './ContactEditor';
 
 interface PageEditorProps {
   slug: string;
@@ -123,13 +124,7 @@ const PageEditor: React.FC<PageEditorProps> = ({ slug, initialContent = '', onSa
           </div>
         </>
       ) : (
-        <textarea
-          value={mission}
-          onChange={e => setMission(e.target.value)}
-          rows={12}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical mb-4"
-          placeholder="Conținut pagină..."
-        />
+        <ContactEditor initialContent={initialContent} onSave={onSave} />
       )}
       <button
         onClick={handleSave}
