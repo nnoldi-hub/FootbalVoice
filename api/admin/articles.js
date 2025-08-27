@@ -6,7 +6,16 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
+  if (req.method === 'GET') {
+    // Returnează toate articolele
+    try {
+      const { rows } = await pool.query('SELECT * FROM articles ORDER BY published_at DESC');
+      res.status(200).json(rows);
+    } catch (error) {
+      console.error('PG ERROR:', error);
+      res.status(500).json({ error: error.message, details: error });
+    }
+  } else if (req.method === 'POST') {
     const {
       title, content, excerpt, category, tags, published, featured,
       imageUrl, publishedAt, readTime, author
