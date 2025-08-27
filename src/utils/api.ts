@@ -1,6 +1,6 @@
 import { Article, User, Subscriber } from '../types';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'https://footbal-voice.vercel.app/api';
 
 // Funcții helper pentru API calls
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
