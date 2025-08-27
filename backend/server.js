@@ -1,3 +1,35 @@
+// Endpoint pentru verificarea codului de login
+app.post('/api/verify-login-code', (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ error: 'Email sau cod lipsă' });
+  global.loginCodes = global.loginCodes || {};
+  if (global.loginCodes[email] === code) {
+    // Cod corect, autentificare reușită
+    delete global.loginCodes[email]; // opțional, șterge codul după folosire
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: 'Cod invalid' });
+  }
+});
+const { sendLoginCode } = require('./mailer');
+const crypto = require('crypto');
+// Endpoint pentru trimitere cod de login pe email
+app.post('/api/send-login-code', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email lipsă' });
+  // Generează cod unic
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  // (opțional) Salvează codul temporar în memorie sau DB pentru validare ulterioară
+  // Exemplu simplu: global.codes = { [email]: code }
+  global.loginCodes = global.loginCodes || {};
+  global.loginCodes[email] = code;
+  try {
+    await sendLoginCode(email, code);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Eroare la trimiterea emailului' });
+  }
+});
 
 import express from 'express';
 import cors from 'cors';
@@ -6,6 +38,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+  app.use(cors({ origin: '*' }));
 const PORT = process.env.PORT || 3001;
 const pool = new Pool();
 
