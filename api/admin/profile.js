@@ -21,9 +21,13 @@ export default async function handler(req, res) {
     }
   } else if (req.method === 'GET') {
     const email = req.query.email;
-    if (!email) return res.status(400).json({ error: 'Email lipsă' });
     try {
-      const { rows } = await pool.query('SELECT name, email FROM admins WHERE email = $1', [email]);
+      let rows;
+      if (email) {
+        ({ rows } = await pool.query('SELECT name, email FROM admins WHERE email = $1', [email]));
+      } else {
+        ({ rows } = await pool.query('SELECT name, email FROM admins LIMIT 1'));
+      }
       if (rows.length === 0) return res.status(404).json({ error: 'Adminul nu a fost găsit' });
       res.status(200).json(rows[0]);
     } catch (err) {
