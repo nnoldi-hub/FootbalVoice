@@ -6,6 +6,11 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
+  // Accept POST for update (redirect to PUT)
+  if (req.method === 'POST') {
+    req.method = 'PUT';
+    return handler(req, res);
+  }
   // Setează headerele CORS pentru toate răspunsurile
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
