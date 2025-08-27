@@ -6,23 +6,32 @@ const Newsletter: React.FC = () => {
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState<string | null>(null);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
 
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setSubscribed(true);
+    setError(null);
+    try {
+      const res = await fetch('https://footbal-voice.vercel.app/api/subscribers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSubscribed(true);
+        setEmail('');
+        setTimeout(() => setSubscribed(false), 3000);
+      } else {
+        setError(data.error || 'Eroare la abonare');
+      }
+    } catch {
+      setError('Eroare la abonare');
+    } finally {
       setLoading(false);
-      setEmail('');
-      
-      // Reset after 3 seconds
-      setTimeout(() => {
-        setSubscribed(false);
-      }, 3000);
-    }, 1000);
+    }
   };
 
   if (subscribed) {
@@ -51,7 +60,10 @@ const Newsletter: React.FC = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+  <form onSubmit={handleSubmit} className="space-y-3">
+        {error && (
+          <div className="text-red-500 text-sm text-center mb-2">{error}</div>
+        )}
         <input
           type="email"
           value={email}
