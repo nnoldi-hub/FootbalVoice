@@ -46,6 +46,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
       icon: BarChart3,
       label: 'Statistici',
       badge: null
+    },
+    {
+      path: '/admin/profile',
+      icon: Eye,
+      label: 'Profil Admin',
+      badge: null
+    },
+    {
+      path: '/admin/static-pages',
+      icon: FileText,
+      label: 'Pagini Statice',
+      badge: null
     }
   ];
 
