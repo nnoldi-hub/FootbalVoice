@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Menu, X, Volume2, Mic } from 'lucide-react';
+import { Search, Menu, X, Mic } from 'lucide-react';
 
 interface PublicHeaderProps {
   onSearch: (term: string) => void;
@@ -45,8 +45,7 @@ const PublicHeader: React.FC<PublicHeaderProps> = ({
             onClick={() => handleNavClick('home')}
           >
             <div className="relative">
-              <Volume2 className="w-8 h-8 text-blue-600" />
-              <Mic className="w-4 h-4 text-green-500 absolute -bottom-1 -right-1" />
+                            <Mic className="w-4 h-4 text-green-500 absolute -bottom-1 -right-1" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
