@@ -1,0 +1,34 @@
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false
+});
+
+export default async function handler(req, res) {
+  if (req.method === 'PUT') {
+    const { email, name, password } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email lipsă' });
+    try {
+      await pool.query(
+        'UPDATE admins SET name = $1, password = $2 WHERE email = $3',
+        [name, password, email]
+      );
+      res.status(200).json({ success: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Eroare la actualizarea profilului' });
+    }
+  } else if (req.method === 'GET') {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email lipsă' });
+    try {
+      const { rows } = await pool.query('SELECT name, email FROM admins WHERE email = $1', [email]);
+      if (rows.length === 0) return res.status(404).json({ error: 'Adminul nu a fost găsit' });
+      res.status(200).json(rows[0]);
+    } catch (err) {
+      res.status(500).json({ error: 'Eroare la preluarea profilului' });
+    }
+  } else {
+    res.status(405).json({ error: 'Method Not Allowed' });
+  }
+}
