@@ -1,4 +1,8 @@
 {
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+  ],
+  "framework": "vite",
   "rewrites": [
     { "source": "/admin/:match*", "destination": "/" },
     { "source": "/article/:match*", "destination": "/" },
